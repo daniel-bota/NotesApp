@@ -1,0 +1,29 @@
+﻿@model List<NotesApp.Data.Note.UserNote>
+
+
+<h1>Notes</h1>
+
+<table class="table">
+	<thead>
+		<tr>
+			<th>Title</th>
+			<th>Last Modified</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var note in Model)
+		{
+			<tr>
+				<td>@note.Title</td>
+				<td>@note.LastModified</td>
+				<td><a href=@Url.Action("EditNote", "Note", new {id=note.Id})>Edit</a></td>
+			</tr>
+		}
+	</tbody>
+</table>
+<form method="get" asp-controller="Note" asp-action="CreateNote">
+	<div class="form-group">
+		<input type="submit" value="Add New Note" class="btn btn-primary" />
+	</div>
+</form>
