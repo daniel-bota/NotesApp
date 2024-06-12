@@ -114,7 +114,9 @@ namespace NotesApp.Core.Authentication
             //This should be replaced with a query to find the authentication session, not the user
             var session = await _dbContext.UserAuthenticationSessions
                 .Include(session => session.UserAccount)
-                .FirstOrDefaultAsync<UserAuthenticationSession>(session => session.Id == new Guid(decryptedKey));
+                .FirstOrDefaultAsync<UserAuthenticationSession>(
+                    session => session.Id == new Guid(decryptedKey)
+                    && session.ExpiryDate > DateTime.Now);
 
             if (session == null)
             {
@@ -129,7 +131,9 @@ namespace NotesApp.Core.Authentication
         {
             var user = await _dbContext.UserAuthenticationSessions
                 .Include(session => session.UserAccount)
-                .FirstOrDefaultAsync<UserAuthenticationSession>(session => session.UserAccount!.Username == username);
+                .FirstOrDefaultAsync<UserAuthenticationSession>(
+                    session => session.UserAccount!.Username == username 
+                    && session.ExpiryDate > DateTime.Now);
             return false;
         }
 

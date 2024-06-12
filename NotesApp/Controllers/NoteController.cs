@@ -18,7 +18,10 @@ namespace NotesApp.Controllers
 
         public async Task<IActionResult> List()
         {
-            List<UserNote> notes = await _dbContext.UserNotes.Include(note => note.UserAccount).Where(note => note.UserAccount!.Username == HttpContext.Session.GetString("Username")).OrderByDescending(note => note.LastModified).ToListAsync();
+            List<UserNote> notes = await _dbContext.UserNotes
+                .Include(note => note.UserAccount)
+                .Where(note => note.UserAccount!.Username == HttpContext.Session.GetString("Username"))
+                .OrderByDescending(note => note.LastModified).ToListAsync();
             return View(notes);
         }
 
