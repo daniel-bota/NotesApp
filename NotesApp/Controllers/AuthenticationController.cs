@@ -61,7 +61,8 @@ namespace NotesApp.Controllers
                 return View(model);
             }
 
-            var errorMessage = await _authenticationManager.CreateAuthenticationSession();
+            var errorMessage = await _authenticationManager.CreateAuthenticationSession(
+                DateTime.Now.AddDays(3));
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
@@ -71,8 +72,12 @@ namespace NotesApp.Controllers
             }
 
             var cookieOptions = new CookieOptions();
-            cookieOptions.Expires = DateTime.Now.AddDays(3);
-            HttpContext.Response.Cookies.Append("AuthenticationSession", _authenticationManager.SessionId, cookieOptions);
+            cookieOptions.Expires = _authenticationManager.Session!.ExpiryDate;
+            HttpContext.Response.Cookies.Append(
+                "AuthenticationSession", 
+                _authenticationManager.ComputeAuthenticationSessionIdHash(
+                    _authenticationManager.Session!.Id.ToString()),
+                cookieOptions);
 
             HttpContext.Session.SetString("Username", _authenticationManager.AuthenticatedUsername);
 
@@ -117,14 +122,28 @@ namespace NotesApp.Controllers
 
             await Task.Run(() =>
             {
-                var cookieOptions = new CookieOptions();
-                cookieOptions.Expires = DateTime.Now.AddDays(-3);
-                HttpContext.Response.Cookies.Append("AuthenticationSession", _authenticationManager.SessionId, cookieOptions);
-
-                HttpContext.Session.Remove("Username");
+                ClearAuthenticationCookie(username);
+                ClearSessionAuthenticationData();
             });
 
+            await _authenticationManager.DeleteExpiredAuthenticationSessions(username);
+
             return RedirectToAction("Login", new { force = true });
+        }
+
+        private void ClearAuthenticationCookie(string username)
+        {
+            if (HttpContext.Request.Cookies.TryGetValue("AuthenticationSession", out string? sessionId))
+            {
+                var cookieOptions = new CookieOptions();
+                cookieOptions.Expires = DateTime.Now.AddDays(-3);
+                HttpContext.Response.Cookies.Append("AuthenticationSession", sessionId, cookieOptions);
+            }
+        }
+
+        private void ClearSessionAuthenticationData()
+        {
+            HttpContext.Session.Remove("Username");
         }
     }
 }

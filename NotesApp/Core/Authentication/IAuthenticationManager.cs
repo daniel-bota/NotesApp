@@ -8,8 +8,8 @@ namespace NotesApp.Core.Authentication
     public interface IAuthenticationManager
     {
         public string AuthenticatedUsername { get; }
-        public string SessionId { get; }
-
+        //public string SessionId { get; }
+        public UserAuthenticationSession? Session { get; }
 
         /// <summary>
         ///     Adds a new user to the database.
@@ -32,9 +32,12 @@ namespace NotesApp.Core.Authentication
         /// <returns>
         ///     string.Empty if successful.Error message if failed.
         /// </returns>
-        Task<string> CreateAuthenticationSession();
-        Task<bool> ValidateAuthenticationCookie(string sessionKey);
+        Task<string> CreateAuthenticationSession(DateTime expiryDate);
+        Task<bool> ValidateAuthenticationCookie(string sessionId);
         Task<bool> ValidateSessionUsername(string username);
+        Task<string> DeleteExpiredAuthenticationSessions(string username);
+
+        string ComputeAuthenticationSessionIdHash(string sessionId);
 
 
     }

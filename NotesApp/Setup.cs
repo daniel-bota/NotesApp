@@ -14,7 +14,7 @@ namespace NotesApp
 			// Add services to the container.
 			builder.Services.AddControllersWithViews();
 			builder.Services.AddDbContext<NotesAppDbContext>(
-				options => options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQL")));
+				options => options.UseSqlServer(builder.Configuration.GetConnectionString("SQLServerLocalDB")));
 
 			builder.Services.AddSession(options => options.IdleTimeout = TimeSpan.FromMinutes(5));
 			builder.Services.AddSingleton<IConfigurationRoot>(builder.Configuration);

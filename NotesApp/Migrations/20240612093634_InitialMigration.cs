@@ -15,11 +15,11 @@ namespace NotesApp.Migrations
                 name: "UserAccounts",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Username = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Password = table.Column<string>(type: "text", nullable: false),
-                    PasswordSalt = table.Column<string>(type: "text", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Username = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PasswordSalt = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -30,8 +30,9 @@ namespace NotesApp.Migrations
                 name: "UserAuthenticationSessions",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserAccountId = table.Column<Guid>(type: "uuid", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UserAccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -48,11 +49,11 @@ namespace NotesApp.Migrations
                 name: "UserNotes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Title = table.Column<string>(type: "text", nullable: true),
-                    Content = table.Column<string>(type: "text", nullable: true),
-                    LastModified = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UserAccountId = table.Column<Guid>(type: "uuid", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastModified = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UserAccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {

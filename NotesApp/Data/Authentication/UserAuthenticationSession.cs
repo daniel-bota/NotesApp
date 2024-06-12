@@ -7,6 +7,8 @@ namespace NotesApp.Data.Authentication
     {
         public Guid Id { get; set; }
 
+        public DateTime ExpiryDate { get; set; }
+
         [ForeignKey("UserAccount")]
         public Guid UserAccountId { get; set; }
 
