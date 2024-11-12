@@ -1,0 +1,44 @@
+﻿@using System.Text
+@using NotesApp.Core.Authentication;
+@inject IAuthenticationManager AuthenticationManager;
+
+@{
+    var validateCookie = () =>
+    {
+        if (!Context.Request.Cookies.TryGetValue("AuthenticationSession", out string? sessionId))
+        {
+            return false;
+        }
+
+        if (!AuthenticationManager.ValidateAuthenticationCookie(sessionId).Result)
+        {
+            return false;
+        }
+
+        Context.Session.SetString("Username", AuthenticationManager.AuthenticatedUsername);
+        return true;
+    };
+
+    var sessionUsernameExists = !Context.Session.TryGetValue("Username", out byte[]? byteUsername);
+    var validUsername = sessionUsernameExists && byteUsername != null;
+
+    if (!validUsername && !validateCookie())
+    {
+        Context.Response.Redirect(Url.Action("Login", "Authentication", new { force = true })!);
+    }
+
+    var username = Context.Session.GetString("Username");
+}
+
+
+<ul class="navbar-nav">
+    <li class="nav-item">
+        @* <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @User.Identity?.Name!</a> *@
+        <a class="nav-link text-dark">Hello @username</a>
+    </li>
+    <li class="nav-item">
+        <form class="form-inline" asp-area="" asp-controller="Authentication" asp-action="Logout" asp-all-route-data="@(new Dictionary<string, string>{{"username", username!}})">
+            <button type="submit" class="nav-link btn btn-link text-dark">Logout</button>
+        </form>
+    </li>
+</ul>
