@@ -20,7 +20,7 @@
     };
 
     var sessionUsernameExists = !Context.Session.TryGetValue("Username", out byte[]? byteUsername);
-    var validUsername = sessionUsernameExists && byteUsername != null;
+    var validUsername = sessionUsernameExists && byteUsername != null && AuthenticationManager.ValidateSessionUsername(byteUsername.ToString()!).Result;
 
     if (!validUsername && !validateCookie())
     {

@@ -14,14 +14,15 @@ namespace NotesApp.Core.Authentication
         private readonly IConfigurationRoot _appConfiguration;
 
         public string AuthenticatedUsername { get; private set; }
-        public string SessionId { get; private set; }
+        //public string SessionId { get; private set; }
+        public UserAuthenticationSession? Session { get; private set; }
 
         public AuthenticationManager(NotesAppDbContext dbContext, IConfigurationRoot configuration)
         {
             _dbContext = dbContext;
             _appConfiguration = configuration;
             AuthenticatedUsername = "";
-            SessionId = "";
+            //SessionId = "";
         }
 
         public async Task<string> RegisterNewUser(RegistrationViewModel model)
@@ -65,7 +66,7 @@ namespace NotesApp.Core.Authentication
             return false;
         }
 
-        public async Task<string> CreateAuthenticationSession()
+        public async Task<string> CreateAuthenticationSession(DateTime expiryDate)
         {
             if (string.IsNullOrEmpty(AuthenticatedUsername))
             {
@@ -81,6 +82,7 @@ namespace NotesApp.Core.Authentication
             var session = new UserAuthenticationSession()
             {
                 Id = Guid.NewGuid(),
+                ExpiryDate = expiryDate,
                 UserAccountId = user.Id,
                 UserAccount = user
             };
@@ -95,7 +97,8 @@ namespace NotesApp.Core.Authentication
                 return e.InnerException == null ? e.Message : e.InnerException.Message;
             }
 
-            SessionId = ComputeAuthenticationSessionIdHash(session.Id.ToString());
+            Session = session;
+            //SessionId = ComputeAuthenticationSessionIdHash(session.Id.ToString());
             return string.Empty;
         }
 
@@ -109,7 +112,11 @@ namespace NotesApp.Core.Authentication
             var decryptedKey = Encoding.UTF8.GetString(Convert.FromBase64String(sessionId));
 
             //This should be replaced with a query to find the authentication session, not the user
-            var session = await _dbContext.UserAuthenticationSessions.Include(session => session.UserAccount).FirstOrDefaultAsync<UserAuthenticationSession>(session => session.Id == new Guid(decryptedKey));
+            var session = await _dbContext.UserAuthenticationSessions
+                .Include(session => session.UserAccount)
+                .FirstOrDefaultAsync<UserAuthenticationSession>(
+                    session => session.Id == new Guid(decryptedKey)
+                    && session.ExpiryDate > DateTime.Now);
 
             if (session == null)
             {
@@ -122,8 +129,44 @@ namespace NotesApp.Core.Authentication
 
         public async Task<bool> ValidateSessionUsername(string username)
         {
-            var user = await _dbContext.UserAuthenticationSessions.Include(session => session.UserAccount).FirstOrDefaultAsync<UserAuthenticationSession>(session => session.UserAccount!.Username == username);
+            var user = await _dbContext.UserAuthenticationSessions
+                .Include(session => session.UserAccount)
+                .FirstOrDefaultAsync<UserAuthenticationSession>(
+                    session => session.UserAccount!.Username == username 
+                    && session.ExpiryDate > DateTime.Now);
             return false;
+        }
+
+        public async Task<string> DeleteExpiredAuthenticationSessions(string username)
+        {
+            try
+            {
+                var expiredSessions = await _dbContext.UserAuthenticationSessions
+                .Include(session => session.UserAccount)
+                .Where(session => session.UserAccount!.Username == username
+                    && session.ExpiryDate < DateTime.Now).ToListAsync();
+
+                foreach (var session in expiredSessions)
+                {
+                    _dbContext.UserAuthenticationSessions.Remove(session);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex.InnerException != null)
+                {
+                    return ex.InnerException.Message;
+                }
+
+                return ex.Message;
+            }
+
+            return string.Empty;
+        }
+
+        public string ComputeAuthenticationSessionIdHash(string sessionId)
+        {
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(sessionId));
         }
 
         private async Task<bool> ValidatePassword(string password, UserAccount user)
@@ -135,12 +178,6 @@ namespace NotesApp.Core.Authentication
                 GetConfiguredHashingIterations()));
 
             return result == user.Password;
-        }
-
-
-        private string ComputeAuthenticationSessionIdHash(string sessionId)
-        {
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(sessionId));
         }
 
         private string ComputePasswordHash(string password, string salt, string pepper, int iterations)
